@@ -1,234 +1,89 @@
 # State Backend Manager
 
-A **demonstration** state management tool built on Squad SDK that shows how teams could choose where `.squad/` state lives, migrate between backends with verification, manage retention policies, and validate state integrity.
+A reference implementation for managing Squad SDK state backends. This example demonstrates how teams can choose where Squad state lives (filesystem, git-notes, orphan branches, or external repositories), migrate between backends with verification, enforce retention policies, and validate state integrity—all through configuration and simple CLI commands.
 
-> **⚠️ Simulated Backends:** The git-notes, orphan branch, and external repo backends are simulated using local filesystem directories. See [Production Integration](#production-integration) for what real backends would look like.
+## Using This Example
 
-## What It Does
+### Installation
 
-This project provides a reference implementation for managing Squad state backends:
-
-- **Backend Resolution** — Select the correct backend based on configuration
-- **State Export & Import** — Extract state from any backend and write to another with full fidelity
-- **Backend Migration** — Migrate state between simulated backends with pre/post verification
-- **State Integrity Validation** — Detect corrupted JSON, orphaned files, and missing required files
-- **Backend Health Inspection** — Report backend type, state size, file count, and last modification time
-- **Retention Policy Management** — Configure and enforce automatic archival of logs older than a specified threshold
-- **Programmatic API** — All capabilities exposed as importable TypeScript functions
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Programmatic API Layer                    │
-│  statusCommand | migrateCommand | verifyCommand | etc.      │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-┌────────────────┴────────────────────────────────────────────┐
-│                   Orchestration Layer                       │
-│  Migrator | Status Inspector | Integrity Checker | Archiver│
-└────────────────┬────────────────────────────────────────────┘
-                 │
-┌────────────────┴────────────────────────────────────────────┐
-│                    Core Service Layer                       │
-│  Backend Resolver | State Exporter | State Importer         │
-│  Retention Policy | Retention Archiver                      │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-┌────────────────┴────────────────────────────────────────────┐
-│              Simulated Backends (filesystem dirs)           │
-│  FilesystemBackend | GitNotesBackend (simulated)            │
-│  OrphanBranchBackend (simulated) | ExternalRepoBackend (sim)│
-└─────────────────────────────────────────────────────────────┘
-```
-
-## SDK Modules Used
-
-This project demonstrates patterns that could integrate with these SDK modules:
-
-| Module | Purpose | Status in This Example |
-|--------|---------|----------------------|
-| `state.WorktreeBackend` | State stored in git worktree | Simulated with filesystem |
-| `state.GitNotesBackend` | State stored in git notes (out-of-tree) | Simulated with `.git-notes-state/` dir |
-| `state.OrphanBranchBackend` | State stored on an orphan branch | Simulated with `.orphan-branch-state/` dir |
-| `state.resolveStateBackend()` | Auto-select backend based on config | Simulated with directory detection |
-| `storage.FSStorageProvider` | Filesystem read/write | Used directly |
-
-## Project Structure
-
-```
-project-squad-sdk-example-state-backend/
-├── src/
-│   ├── index.ts                    # Barrel export
-│   ├── types.ts                    # All interfaces (StateBackend, SerializedState, etc.)
-│   ├── core/
-│   │   ├── backend-resolver.ts     # Resolve backend from configuration
-│   │   ├── state-exporter.ts       # Export state from any backend
-│   │   ├── state-importer.ts       # Import state into any backend
-│   │   ├── migrator.ts             # Orchestrate backend-to-backend migration
-│   │   ├── integrity-checker.ts    # Validate state structure and JSON
-│   │   ├── status-inspector.ts     # Report backend health metrics
-│   │   ├── retention-policy.ts     # Parse and validate retention rules
-│   │   └── retention-archiver.ts   # Auto-archive old logs
-│   └── cli/
-│       ├── index.ts                # Register CLI commands
-│       └── commands/
-│           ├── backend-set.ts      # Set backend configuration
-│           ├── migrate.ts          # Execute migration
-│           ├── status.ts           # Show backend status
-│           ├── verify.ts           # Run integrity checks
-│           └── retention-set.ts    # Configure retention policy
-├── test/
-│   ├── unit/                       # Unit tests for core modules
-│   ├── cli/                        # CLI command tests
-│   └── e2e/                        # End-to-end integration tests
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-## Installation
-
-### Prerequisites
-
-- Node.js 18+ 
-- npm 9+
-
-### Install Dependencies
+**Prerequisites:** Node.js 18+, npm 9+
 
 ```bash
 npm install
-```
-
-## Build
-
-```bash
 npm run build
 ```
 
-This compiles TypeScript from `src/` to `dist/` with declarations.
+### Check Backend Status
 
-## Test
-
-```bash
-npm run test
-```
-
-Run all unit, CLI, and end-to-end tests with Vitest.
-
-For interactive UI:
+See what backend is currently active and verify its health:
 
 ```bash
-npm run test:ui
+# Show backend type, file count, size, and integrity status
+npm run dev -- squad state status
+
+# Example output:
+# Backend: git-notes
+# Files: 12
+# Size: 4,096 bytes
+# Last Write: 2024-01-15 10:30:00
+# Healthy: yes
+# Integrity: valid
 ```
 
-## Configuration
+### Migrate Between Backends
 
-State Backend Manager reads configuration from your Squad project's `squad.yaml` file:
+Move state from one backend to another with automatic verification:
 
-```yaml
-backend: git-notes  # Options: filesystem, git-notes, orphan-branch, external-repo
-
-retentionPolicy:
-  enabled: true
-  maxAgeDays: 30
-  archiveDir: archive/
-```
-
-### Backend Options
-
-All non-filesystem backends are **simulated** using local directories for demonstration:
-
-- **filesystem** — Store state in `.squad/` directory (default, real implementation)
-- **git-notes** — _Simulated_ with `.git-notes-state/` directory (production: `git notes` commands)
-- **orphan-branch** — _Simulated_ with `.orphan-branch-state/` directory (production: orphan git branches)
-- **external-repo** — _Simulated_ with `.external-state/` directory (production: separate git repository)
-
-### Retention Policy Options
-
-- **maxAgeDays** — Archive logs older than this many days (default: 30)
-- **archiveDir** — Directory within `.squad/` to archive old files (default: `archive/`)
-- **enabled** — Enable/disable automatic archival (default: true)
-
-## Quick Start
-
-See [QUICKSTART.md](./QUICKSTART.md) for step-by-step setup and migration guide.
-
-## Usage
-
-All capabilities are available as importable TypeScript functions:
-
-```typescript
-import {
-  resolveBackend,
-  getCurrentBackendType,
-  inspectBackendStatus,
-  checkStateIntegrity,
-  migrateBackend,
-} from 'project-squad-sdk-example-state-backend';
-
-// Detect current backend
-const backendType = await getCurrentBackendType('/path/to/project');
-console.log(`Current backend: ${backendType}`);
-
-// Resolve a backend instance
-const backend = await resolveBackend({
-  backendType: 'git-notes',
-  config: { rootDir: '/path/to/project' },
-});
-
-// Check status
-const status = await inspectBackendStatus(backend, backendType);
-console.log(`Files: ${status.fileCount}, Healthy: ${status.isHealthy}`);
-
-// Verify integrity
-const integrity = await checkStateIntegrity(backend);
-console.log(`Valid: ${integrity.isValid}`);
-```
-
-See [QUICKSTART.md](./QUICKSTART.md) for a complete walkthrough.
-
-## Production Integration
-
-This example uses simulated backends (filesystem directories). Here's what production implementations would look like:
-
-### Git Notes Backend
-A real git-notes backend would:
 ```bash
-# Write state
-git notes --ref=squad-state add -f -m "$(cat state.json)" HEAD
+# Configure source backend
+npm run dev -- squad state backend set filesystem
 
-# Read state
-git notes --ref=squad-state show HEAD
+# Perform migration to target backend
+npm run dev -- squad state migrate --target git-notes
 
-# List all state entries
-git notes --ref=squad-state list
+# Example output:
+# Migration started: filesystem → git-notes
+# Files transferred: 12
+# Checksums match: yes
+# Migration complete
 ```
-Implementation would shell out to `git notes` commands or use a git library (e.g., `isomorphic-git`, `nodegit`).
 
-### Orphan Branch Backend
-A real orphan-branch backend would:
+### Verify State Integrity
+
+Check for corruption, missing files, or invalid JSON:
+
 ```bash
-# Create orphan branch (once)
-git checkout --orphan squad-state
-git rm -rf .
+npm run dev -- squad state verify
 
-# Write state files, commit, switch back
-echo '{}' > state.json
-git add state.json && git commit -m "Update state"
-git checkout -   # return to working branch
+# Example output:
+# ✓ State integrity check passed
+# Files scanned: 12
+# JSON valid: 12/12
+# Required files present: yes
 ```
-Implementation would use git worktrees or stash/checkout sequences to avoid disrupting the working directory.
 
-### External Repository Backend
-A real external-repo backend would:
-- Clone or pull a dedicated state repository
-- Write state files, commit, and push
-- Use shallow clones for performance
-- Handle authentication and remote configuration
+### Set Retention Policies
 
-### Extending This Example
-To build a production backend, implement the `StateBackend` interface from `src/types.ts`:
+Configure automatic archival of old logs:
+
+```bash
+# Keep logs for 30 days, archive older ones
+npm run dev -- squad state retention set --max-age-days 30 --archive-dir archive/
+
+# Example output:
+# Retention policy configured
+# Max age: 30 days
+# Archive directory: .squad/archive/
+```
+
+---
+
+## Extending This Example
+
+### Adding a Custom Backend
+
+Implement the `StateBackend` interface from `src/types.ts`:
+
 ```typescript
 export interface StateBackend {
   readonly name: string;
@@ -240,21 +95,151 @@ export interface StateBackend {
 }
 ```
 
-## Development
+Register it in `src/core/backend-resolver.ts` to make it discoverable.
+
+### Integrating with Real Git Backends
+
+This example uses simulated backends (filesystem directories). Production implementations:
+
+**Git Notes Backend** — Store state in git notes:
+```bash
+git notes --ref=squad-state add -f -m "$(cat state.json)" HEAD
+git notes --ref=squad-state show HEAD
+```
+
+**Orphan Branch Backend** — Store state on an orphan git branch:
+```bash
+git checkout --orphan squad-state
+git rm -rf .
+echo '{}' > state.json && git commit -m "Update"
+```
+
+**External Repository Backend** — Clone/pull a dedicated state repo, write, commit, push.
+
+See `src/core/state-exporter.ts` and `src/core/state-importer.ts` for migration orchestration patterns.
+
+### Programmatic API
+
+All capabilities are available as importable TypeScript functions:
+
+```typescript
+import {
+  resolveBackend,
+  getCurrentBackendType,
+  inspectBackendStatus,
+  checkStateIntegrity,
+  migrateBackend,
+} from './dist/index.js';
+
+const backendType = await getCurrentBackendType('/path/to/project');
+const backend = await resolveBackend({ backendType, config: { rootDir: '/path' } });
+const status = await inspectBackendStatus(backend, backendType);
+const integrity = await checkStateIntegrity(backend);
+```
+
+### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                 Programmatic API Layer                       │
+│ statusCommand | migrateCommand | verifyCommand | etc.        │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│                 Orchestration Layer                          │
+│ Migrator | StatusInspector | IntegrityChecker | Archiver     │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│                 Core Service Layer                           │
+│ BackendResolver | StateExporter | StateImporter | Policies   │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│          Simulated Backends (filesystem directories)         │
+│ FilesystemBackend | GitNotesBackend | OrphanBranchBackend    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── index.ts                 # Barrel export (public API)
+├── types.ts                 # All interfaces (StateBackend, StatusReport, etc.)
+├── core/                    # Core service layer
+│   ├── backend-resolver.ts       # Resolve backend from config
+│   ├── state-exporter.ts         # Export state from any backend
+│   ├── state-importer.ts         # Import state to any backend
+│   ├── migrator.ts               # Backend-to-backend migration orchestration
+│   ├── integrity-checker.ts      # Validate JSON, detect corruption
+│   ├── status-inspector.ts       # Report health metrics
+│   ├── retention-policy.ts       # Parse retention configuration
+│   └── retention-archiver.ts     # Auto-archive old logs
+└── cli/                     # CLI command layer
+    ├── index.ts                  # Command registration
+    └── commands/
+        ├── backend-set.ts        # Change backend type
+        ├── status.ts             # Show backend health
+        ├── migrate.ts            # Execute migration
+        ├── verify.ts             # Run integrity checks
+        └── retention-set.ts      # Configure retention
+```
+
+## SDK Modules
+
+This project integrates with Squad SDK:
+
+| Module | Purpose | Status |
+|--------|---------|--------|
+| `state.WorktreeBackend` | Filesystem state storage | Implemented (real) |
+| `state.GitNotesBackend` | Git notes state storage | Simulated (filesystem) |
+| `state.OrphanBranchBackend` | Orphan branch state storage | Simulated (filesystem) |
+| `state.resolveStateBackend()` | Auto-select backend | Implemented |
+| `storage.FSStorageProvider` | Filesystem I/O | Used directly |
+
+---
+
+## Testing
 
 ```bash
-# Clean build artifacts
-npm run clean
+# Run all tests
+npm run test
 
-# Run tests in watch mode
+# Interactive test UI
+npm run test:ui
+
+# Watch mode
 npm run test -- --watch
 ```
+
+Tests cover:
+- **Unit tests** (`test/unit/`) — Core logic and utilities
+- **CLI tests** (`test/cli/`) — Command parsing and execution
+- **E2E tests** (`test/e2e/`) — Full migration workflows
+
+---
+
+## Roadmap
+
+- [x] Simulated backend implementations (filesystem directories)
+- [x] Backend resolution and discovery
+- [x] State migration with pre/post verification
+- [x] Integrity validation (JSON, required files, orphaned data)
+- [x] Retention policies and auto-archival
+- [x] CLI command interface
+- [ ] Real git-notes backend (requires `nodegit` or `isomorphic-git`)
+- [ ] Real orphan-branch backend (requires git worktree integration)
+- [ ] External repository backend (requires remote auth/sync)
+- [ ] Performance benchmarks for large state volumes
+- [ ] State compression and delta sync
+
+---
 
 ## License
 
 Proprietary — Squad SDK Example Project
 
-## Links
-
-- [Squad SDK Documentation](https://github.com/bradygaster/squad-sdk)
-- [Quick Start Guide](./QUICKSTART.md)
+**Links:** [Squad SDK](https://github.com/bradygaster/squad-sdk) · [Quick Start](./QUICKSTART.md)
