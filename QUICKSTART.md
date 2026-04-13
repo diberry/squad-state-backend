@@ -36,7 +36,7 @@ npm run test
 See what backend is active and verify state health:
 
 ```bash
-npm run dev -- squad state status
+npx squad-state status
 ```
 
 **Expected output:**
@@ -53,22 +53,19 @@ If state is corrupted or missing files, you'll see warnings here.
 
 ---
 
-### Step 2: Create Some State
+### Step 2: Verify Current State
 
-Add test data so we have something to migrate:
-
-```bash
-npm run dev -- squad state backend set filesystem
-npm run dev -- squad state create-sample
-```
-
-Check that files were created:
+Before migrating, check that the current state is valid:
 
 ```bash
-npm run dev -- squad state status
+npx squad-state verify
 ```
 
-You should see file count increase.
+**Expected output:**
+```
+✓ All checks passed.
+All checks passed. 8 files validated.
+```
 
 ---
 
@@ -77,17 +74,12 @@ You should see file count increase.
 Move state from filesystem to a simulated git-notes backend:
 
 ```bash
-npm run dev -- squad state migrate --target git-notes
+npx squad-state migrate filesystem git-notes
 ```
 
 **Expected output:**
 ```
-Migration started: filesystem → git-notes
-Files transferred: 8
-Pre-migration integrity: valid
-Post-migration integrity: valid
-Checksums match: yes
-Migration complete
+Migration complete: 8 files transferred from filesystem to git-notes (2048 bytes, 35ms)
 ```
 
 The migration automatically:
@@ -98,27 +90,18 @@ The migration automatically:
 
 ---
 
-### Step 4: Verify State Integrity
+### Step 4: Verify After Migration
 
 Run a full integrity check on the new backend:
 
 ```bash
-npm run dev -- squad state verify
+npx squad-state verify
 ```
 
 **Expected output:**
 ```
-✓ State integrity check passed
-Files scanned: 8
-JSON valid: 8/8
-Required files present: yes
-No orphaned data detected
-```
-
-If you want to see detailed results:
-
-```bash
-npm run dev -- squad state verify --json
+✓ All checks passed.
+All checks passed. 8 files validated.
 ```
 
 ---
@@ -128,15 +111,12 @@ npm run dev -- squad state verify --json
 Configure automatic archival of old logs:
 
 ```bash
-npm run dev -- squad state retention set --max-age-days 30 --archive-dir archive/
+npx squad-state retain --max-age 30
 ```
 
 **Expected output:**
 ```
-Retention policy configured
-Max age: 30 days
-Archive directory: .squad/archive/
-Enabled: yes
+Retention policy set: max age 30 days, archive to .squad/archive
 ```
 
 Logs older than 30 days will be automatically moved to `.squad/archive/` on the next run.
@@ -229,24 +209,23 @@ See the full API in [README.md → Programmatic API](./README.md#programmatic-ap
 
 **"Migration failed: Integrity check failed"**
 - The target backend has corrupted or incomplete state.
-- Run `npm run dev -- squad state verify` to see details.
+- Run `npx squad-state verify` to see details.
 - Clear the target backend and retry.
 
 **"Files don't match checksums"**
 - State was corrupted during transfer.
-- Verify both backends with `squad state verify`.
+- Verify both backends with `npx squad-state verify`.
 - Contact support if it persists.
 
 **"Backend not found"**
 - Ensure the backend directory exists: `.squad/`, `.git-notes-state/`, `.orphan-branch-state/`, or `.external-state/`.
-- Set the backend explicitly: `npm run dev -- squad state backend set filesystem`
 
 ---
 
 ## Next Steps
 
 - **Read the [README.md](./README.md)** for full API and architecture details
-- **Explore CLI commands** — Try `npm run dev -- squad state --help`
+- **Explore CLI commands** — Run `npx squad-state help` for available commands
 - **Build a real backend** — Implement `StateBackend` interface for your git strategy
 - **Run the test suite** — `npm run test` to see more usage examples
 - **Check the source** — `src/core/` has well-commented implementations

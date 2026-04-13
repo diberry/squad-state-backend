@@ -19,7 +19,7 @@ See what backend is currently active and verify its health:
 
 ```bash
 # Show backend type, file count, size, and integrity status
-npm run dev -- squad state status
+npx squad-state status
 
 # Example output:
 # Backend: git-notes
@@ -35,17 +35,11 @@ npm run dev -- squad state status
 Move state from one backend to another with automatic verification:
 
 ```bash
-# Configure source backend
-npm run dev -- squad state backend set filesystem
-
-# Perform migration to target backend
-npm run dev -- squad state migrate --target git-notes
+# Perform migration from filesystem to git-notes
+npx squad-state migrate filesystem git-notes
 
 # Example output:
-# Migration started: filesystem → git-notes
-# Files transferred: 12
-# Checksums match: yes
-# Migration complete
+# Migration complete: 12 files transferred from filesystem to git-notes (4096 bytes, 42ms)
 ```
 
 ### Verify State Integrity
@@ -53,13 +47,11 @@ npm run dev -- squad state migrate --target git-notes
 Check for corruption, missing files, or invalid JSON:
 
 ```bash
-npm run dev -- squad state verify
+npx squad-state verify
 
 # Example output:
-# ✓ State integrity check passed
-# Files scanned: 12
-# JSON valid: 12/12
-# Required files present: yes
+# ✓ All checks passed.
+# All checks passed. 12 files validated.
 ```
 
 ### Set Retention Policies
@@ -67,13 +59,11 @@ npm run dev -- squad state verify
 Configure automatic archival of old logs:
 
 ```bash
-# Keep logs for 30 days, archive older ones
-npm run dev -- squad state retention set --max-age-days 30 --archive-dir archive/
+# Keep logs for 30 days
+npx squad-state retain --max-age 30
 
 # Example output:
-# Retention policy configured
-# Max age: 30 days
-# Archive directory: .squad/archive/
+# Retention policy set: max age 30 days, archive to .squad/archive
 ```
 
 ---
@@ -179,6 +169,7 @@ src/
 │   ├── retention-policy.ts       # Parse retention configuration
 │   └── retention-archiver.ts     # Auto-archive old logs
 └── cli/                     # CLI command layer
+    ├── main.ts                   # CLI entrypoint (squad-state binary)
     ├── index.ts                  # Command registration
     └── commands/
         ├── backend-set.ts        # Change backend type

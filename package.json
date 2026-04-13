@@ -5,6 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "squad-state": "dist/cli/main.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest",
