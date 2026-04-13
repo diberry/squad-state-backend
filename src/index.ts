@@ -1,5 +1,4 @@
-// — zero dependencies
-// This is the barrel export for the State Backend Manager
+// Barrel export for the State Backend Manager
 
 export * from './types.js';
 export * from './core/backend-resolver.js';

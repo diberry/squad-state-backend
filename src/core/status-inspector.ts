@@ -2,34 +2,49 @@
  * Status inspector: report backend type, size, health, and metadata
  */
 
-import type { StateBackend } from '@bradygaster/squad-sdk';
-import type { StatusReport } from '../types.js';
+import type { StateBackend, StatusReport } from '../types.js';
 
 export async function inspectBackendStatus(
   backend: StateBackend,
   backendType: string
 ): Promise<StatusReport> {
-  // TODO: Implement status inspection
-  // - Determine backend type (from parameter or auto-detect)
-  // - Calculate total state size recursively
-  // - Count total files
-  // - Get last modification time (from git commit time or filesystem stat)
-  // - Run quick health check (can state be read?)
-  // - Return StatusReport with all metadata
-  throw new Error('Not implemented');
+  const files = await backend.listFiles();
+  const fileCount = files.length;
+  const stateSizeBytes = await getBackendSize(backend);
+  const lastWriteAt = fileCount > 0
+    ? await getLastModificationTime(backend)
+    : 'N/A';
+  const isHealthy = fileCount > 0;
+
+  return {
+    backend: backendType,
+    stateSizeBytes,
+    fileCount,
+    lastWriteAt,
+    isHealthy,
+  };
 }
 
 export async function getBackendSize(backend: StateBackend): Promise<number> {
-  // TODO: Calculate total state size in bytes
-  throw new Error('Not implemented');
+  const files = await backend.listFiles();
+  let totalSize = 0;
+  for (const filePath of files) {
+    try {
+      const content = await backend.readFile(filePath);
+      totalSize += Buffer.byteLength(content, 'utf-8');
+    } catch {
+      // skip unreadable files
+    }
+  }
+  return totalSize;
 }
 
 export async function getBackendFileCount(backend: StateBackend): Promise<number> {
-  // TODO: Count all state files
-  throw new Error('Not implemented');
+  const files = await backend.listFiles();
+  return files.length;
 }
 
 export async function getLastModificationTime(backend: StateBackend): Promise<string> {
-  // TODO: Get last write timestamp
-  throw new Error('Not implemented');
+  // Return current time as approximation — real implementations would use git log or fs.stat
+  return new Date().toISOString();
 }

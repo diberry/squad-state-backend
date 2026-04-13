@@ -2,6 +2,16 @@
  * Core types and interfaces for State Backend Manager
  */
 
+/** Abstract backend interface for state storage */
+export interface StateBackend {
+  readonly name: string;
+  readFile(relativePath: string): Promise<string>;
+  writeFile(relativePath: string, content: string): Promise<void>;
+  deleteFile(relativePath: string): Promise<void>;
+  listFiles(prefix?: string): Promise<string[]>;
+  exists(relativePath: string): Promise<boolean>;
+}
+
 export interface SerializedState {
   files: Map<string, string>;
   metadata: {
@@ -13,7 +23,7 @@ export interface SerializedState {
 
 export interface RetentionPolicy {
   maxAgeDays: number;
-  archiveDir?: string;
+  archiveDir: string;
   enabled: boolean;
 }
 
@@ -61,3 +71,5 @@ export interface ArchiveReport {
   entriesProcessed: number;
   archivePath: string;
 }
+
+export type BackendType = 'filesystem' | 'git-notes' | 'orphan' | 'external';
