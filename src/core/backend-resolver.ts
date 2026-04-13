@@ -1,5 +1,11 @@
 /**
  * Backend resolver: determine current backend and create instances
+ *
+ * SIMULATED BACKENDS: The git-notes, orphan, and external backends in this
+ * example are simulated using namespaced filesystem directories. In production,
+ * these would use actual git notes (git notes add/show), orphan branches
+ * (git checkout --orphan), or cloned external repositories. See README.md
+ * "Production Integration" section for details.
  */
 
 import * as fs from 'node:fs';
@@ -66,21 +72,33 @@ export class FilesystemBackend implements StateBackend {
   }
 }
 
-/** Git-notes backend (simulated with a namespaced filesystem directory) */
+/**
+ * SIMULATED: Git-notes backend uses a namespaced filesystem directory.
+ * In production, this would shell out to `git notes add/show/list` to store
+ * state in git notes refs (e.g., refs/notes/squad-state).
+ */
 export class GitNotesBackend extends FilesystemBackend {
   constructor(rootDir: string) {
     super(path.join(rootDir, '.git-notes-state'), 'git-notes');
   }
 }
 
-/** Orphan branch backend (simulated with a namespaced filesystem directory) */
+/**
+ * SIMULATED: Orphan branch backend uses a namespaced filesystem directory.
+ * In production, this would checkout an orphan branch (e.g., squad-state),
+ * write files, commit, and switch back to the working branch.
+ */
 export class OrphanBranchBackend extends FilesystemBackend {
   constructor(rootDir: string) {
     super(path.join(rootDir, '.orphan-branch-state'), 'orphan');
   }
 }
 
-/** External repo backend (simulated with a separate directory) */
+/**
+ * SIMULATED: External repo backend uses a separate directory.
+ * In production, this would clone/pull a dedicated state repository,
+ * write files, commit, and push changes.
+ */
 export class ExternalRepoBackend extends FilesystemBackend {
   constructor(rootDir: string) {
     const externalDir = (rootDir.endsWith('-external'))
@@ -113,6 +131,23 @@ export async function resolveBackend(
   }
 }
 
-export async function getCurrentBackendType(): Promise<string> {
+/**
+ * Detect the current backend type by checking which simulated backend
+ * directories exist. Falls back to 'filesystem' if none are found.
+ */
+export async function getCurrentBackendType(rootDir?: string): Promise<BackendType> {
+  const dir = rootDir || process.cwd();
+
+  // Check for simulated backend directories in priority order
+  if (fs.existsSync(path.join(dir, '.git-notes-state'))) {
+    return 'git-notes';
+  }
+  if (fs.existsSync(path.join(dir, '.orphan-branch-state'))) {
+    return 'orphan';
+  }
+  if (fs.existsSync(path.join(dir, '.external-state'))) {
+    return 'external';
+  }
+
   return 'filesystem';
 }

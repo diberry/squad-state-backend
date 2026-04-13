@@ -54,9 +54,27 @@ describe('BackendResolver', () => {
     expect(ex_backend).toBeInstanceOf(ExternalRepoBackend);
   });
 
-  it('should return filesystem as current backend type', async () => {
-    const type = await getCurrentBackendType();
+  it('should return filesystem as current backend type when no backend dirs exist', async () => {
+    const type = await getCurrentBackendType(tmpDir);
     expect(type).toBe('filesystem');
+  });
+
+  it('should detect git-notes backend from directory', async () => {
+    fs.mkdirSync(path.join(tmpDir, '.git-notes-state'), { recursive: true });
+    const type = await getCurrentBackendType(tmpDir);
+    expect(type).toBe('git-notes');
+  });
+
+  it('should detect orphan backend from directory', async () => {
+    fs.mkdirSync(path.join(tmpDir, '.orphan-branch-state'), { recursive: true });
+    const type = await getCurrentBackendType(tmpDir);
+    expect(type).toBe('orphan');
+  });
+
+  it('should detect external backend from directory', async () => {
+    fs.mkdirSync(path.join(tmpDir, '.external-state'), { recursive: true });
+    const type = await getCurrentBackendType(tmpDir);
+    expect(type).toBe('external');
   });
 
   it('should read and write files through FilesystemBackend', async () => {

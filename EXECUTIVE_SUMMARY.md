@@ -1,13 +1,21 @@
 # Executive Summary: State Backend Manager
 
 ## One-Liner
-An enterprise-grade state management tool that lets teams move Squad's AI decision logs out of their git repository, choosing between filesystem, git-notes, orphan branches, or external repos—eliminating state noise, merge conflicts, and compliance headaches at scale.
+A **demonstration** state management tool that shows how teams could move Squad's AI decision logs out of their git repository, simulating filesystem, git-notes, orphan branch, and external repo backends using namespaced directories.
 
 ## The Problem
 Squad stores all agent state (decisions, orchestration history, team configs) in `.squad/` files committed to every repo. This works for small teams but causes pain at scale: noisy git diffs from constant log churn, merge conflicts on shared decision files, state leaking across forks, and compliance concerns about AI decision logs in production source code. Enterprise customers regularly request this—today, there's no path forward without forking the SDK.
 
 ## The Opportunity
-The Squad SDK already ships with four production-grade state backends (WorktreeBackend, GitNotesBackend, OrphanBranchBackend, ExternalRepoBackend) but doesn't expose them to users or help teams migrate between them. This example project demonstrates how to wrap the SDK's backend layer in a clean CLI and teaches developers to build their own state management extensions. It fills a critical product gap while serving as the canonical reference implementation for the SDK's most powerful feature.
+The Squad SDK envisions multiple state backends (git-notes, orphan branches, external repos) but doesn't yet expose them to users. This example project **simulates** those backends using namespaced filesystem directories to demonstrate the architecture, migration patterns, and tooling that a production implementation would need. It serves as a reference implementation and teaching tool for building real backend integrations.
+
+## ⚠️ Important: Simulated Backends
+All non-filesystem backends in this project are **simulated using local directories**:
+- `git-notes` → writes to `.git-notes-state/` directory (production would use `git notes` commands)
+- `orphan` → writes to `.orphan-branch-state/` directory (production would use orphan git branches)
+- `external` → writes to `.external-state/` directory (production would clone/push to a separate repo)
+
+The value is in the **architecture, interfaces, and migration patterns** — not the backend implementations themselves. See the README "Production Integration" section for what real backends would look like.
 
 ## Who Benefits
 
